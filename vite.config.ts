@@ -5,8 +5,8 @@ import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  //base: './',
-  base: '/pet-inventory-system/', // 替换成你的 GitHub 仓库名
+  base: './',
+  //base: '/pet-inventory-system/', // 替换成你的 GitHub 仓库名
   plugins: [inspectAttr(), react()],
   resolve: {
     alias: {
