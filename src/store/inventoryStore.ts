@@ -11,6 +11,7 @@ import type {
   DualPrice
 } from '@/types';
 import { allProducts, allSKUs } from '@/data/products';
+import { inboundAPI, inventoryAPI } from '@/services/api';
 
 // 生成唯一ID
 const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -116,6 +117,9 @@ interface InventoryState {
   // 数据管理
   resetAllData: () => void;
   
+  // 从云端加载数据
+  loadFromCloud: () => Promise<void>;
+  
   // 产品管理
   addProduct: (product: Product) => void;
   updateProduct: (id: string, updates: Partial<Product>) => void;
@@ -202,7 +206,7 @@ export const useInventoryStore = create<InventoryState>()(
       },
       
       // 添加入库记录
-      addInbound: (record) => {
+      addInbound: async (record) => {
         const now = new Date();
         const newRecord: InboundRecord = {
           ...record,
@@ -213,6 +217,7 @@ export const useInventoryStore = create<InventoryState>()(
           createdAt: now.toISOString().slice(0, 10)
         };
         
+        // 先更新本地状态（乐观更新）
         set(state => {
           // 更新库存 - 累计数量
           const newInventory = state.inventory.map(item => {
@@ -235,21 +240,47 @@ export const useInventoryStore = create<InventoryState>()(
           };
         });
         
+        // 调用后端API保存到云端
+        try {
+          const result = await inboundAPI.create(newRecord);
+          if (!result.success) {
+            console.error('保存入库记录到云端失败:', result.message);
+          } else {
+            console.log('入库记录已保存到云端');
+          }
+        } catch (error) {
+          console.error('调用入库API失败:', error);
+        }
+        
         // 更新采购计划
         get().generatePurchasePlans();
       },
       
       // 更新入库记录
-      updateInbound: (id, updates) => {
+      updateInbound: async (id, updates) => {
+        // 先更新本地状态
         set(state => ({
           inboundRecords: state.inboundRecords.map(r => 
             r.id === id ? { ...r, ...updates } : r
           )
         }));
+        
+        // 调用后端API更新云端数据
+        try {
+          const result = await inboundAPI.update(id, updates);
+          if (!result.success) {
+            console.error('更新云端入库记录失败:', result.message);
+          } else {
+            console.log('云端入库记录已更新');
+          }
+        } catch (error) {
+          console.error('调用更新入库API失败:', error);
+        }
       },
       
       // 删除入库记录
-      deleteInbound: (id) => {
+      deleteInbound: async (id) => {
+        // 先更新本地状态
         set(state => {
           const record = state.inboundRecords.find(r => r.id === id);
           if (!record) return state;
@@ -274,6 +305,18 @@ export const useInventoryStore = create<InventoryState>()(
             inventory: newInventory
           };
         });
+        
+        // 调用后端API删除云端数据
+        try {
+          const result = await inboundAPI.delete(id);
+          if (!result.success) {
+            console.error('删除云端入库记录失败:', result.message);
+          } else {
+            console.log('云端入库记录已删除');
+          }
+        } catch (error) {
+          console.error('调用删除入库API失败:', error);
+        }
         
         get().generatePurchasePlans();
       },
@@ -592,6 +635,47 @@ export const useInventoryStore = create<InventoryState>()(
           purchasePlans: [],
           purchaseOrders: []
         });
+      },
+      
+      // 从云端加载数据
+      loadFromCloud: async () => {
+        try {
+          // 加载入库记录
+          const inboundResult = await inboundAPI.getAll();
+          if (inboundResult.success && inboundResult.data) {
+            set({
+              inboundRecords: inboundResult.data as InboundRecord[]
+            });
+            console.log('从云端加载入库记录:', inboundResult.data.length, '条');
+          }
+          
+          // 加载库存数据
+          const inventoryResult = await inventoryAPI.getAll();
+          if (inventoryResult.success && inventoryResult.data) {
+            set(state => {
+              const cloudInventory = inventoryResult.data as InventoryRecord[];
+              // 合并云端库存数据和本地库存数据
+              const mergedInventory = state.inventory.map(localItem => {
+                const cloudItem = cloudInventory.find(c => c.skuId === localItem.skuId);
+                if (cloudItem) {
+                  return {
+                    ...localItem,
+                    quantity: cloudItem.quantity,
+                    totalInbound: cloudItem.totalInbound,
+                    totalOutbound: cloudItem.totalOutbound,
+                    status: cloudItem.status,
+                    lastUpdated: cloudItem.lastUpdated
+                  };
+                }
+                return localItem;
+              });
+              return { inventory: mergedInventory };
+            });
+            console.log('从云端加载库存数据成功');
+          }
+        } catch (error) {
+          console.error('从云端加载数据失败:', error);
+        }
       },
       
       // 添加新产品
