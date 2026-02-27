@@ -14,13 +14,15 @@ import {
   Save,
   FileUp,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { useInventoryStore } from '@/store/inventoryStore';
 import { parseCoupangData, validateCoupangData } from '@/data/coupangParser';
 import { exportToExcel } from '@/data/products';
 import { allSKUs } from '@/data/products';
-import type { DualPrice } from '@/types';
+import type { DualPrice, InboundRecord } from '@/types';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -51,7 +53,7 @@ function DualPriceDisplay({ price }: { price: DualPrice }) {
 }
 
 export function Inbound() {
-  const { inboundRecords, addInbound, importCoupangInbound } = useInventoryStore();
+  const { inboundRecords, addInbound, updateInbound, deleteInbound, importCoupangInbound } = useInventoryStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [isAddingOrder, setIsAddingOrder] = useState(false);
@@ -61,6 +63,12 @@ export function Inbound() {
   const [parsedData, setParsedData] = useState<ReturnType<typeof parseCoupangData> | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // 编辑和删除状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<InboundRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingRecord, setDeletingRecord] = useState<InboundRecord | null>(null);
   
   // 新入库单表单 - 增加入库日期和时间
   const [newOrder, setNewOrder] = useState<{
@@ -255,6 +263,44 @@ export function Inbound() {
     }
   };
 
+  // 打开编辑对话框
+  const handleEdit = (record: InboundRecord) => {
+    setEditingRecord(record);
+    setIsEditing(true);
+  };
+
+  // 保存编辑
+  const handleSaveEdit = () => {
+    if (!editingRecord) return;
+    
+    updateInbound(editingRecord.id, {
+      quantity: editingRecord.quantity,
+      inboundDate: editingRecord.inboundDate,
+      inboundTime: editingRecord.inboundTime,
+      supplier: editingRecord.supplier,
+      operator: editingRecord.operator,
+      remark: editingRecord.remark
+    });
+    
+    setIsEditing(false);
+    setEditingRecord(null);
+  };
+
+  // 打开删除确认对话框
+  const handleDeleteClick = (record: InboundRecord) => {
+    setDeletingRecord(record);
+    setIsDeleting(true);
+  };
+
+  // 确认删除
+  const handleConfirmDelete = () => {
+    if (!deletingRecord) return;
+    
+    deleteInbound(deletingRecord.id);
+    setIsDeleting(false);
+    setDeletingRecord(null);
+  };
+
   return (
     <div className={cn(
       'space-y-6 transition-all duration-700',
@@ -428,6 +474,28 @@ export function Inbound() {
                     </div>
                   </div>
                 )}
+                
+                {/* Action Buttons */}
+                <div className="mt-4 pt-4 border-t border-white/5 flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1"
+                    onClick={() => handleEdit(record)}
+                  >
+                    <Edit2 size={14} />
+                    修改
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1 text-red-400 hover:text-red-400 border-red-500/30 hover:bg-red-500/10"
+                    onClick={() => handleDeleteClick(record)}
+                  >
+                    <Trash2 size={14} />
+                    删除
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
@@ -668,6 +736,156 @@ export function Inbound() {
             >
               <Upload size={16} className="mr-2" />
               开始导入
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="bg-card border-white/10 max-w-lg">
+          <DialogHeader>
+            <DialogTitle>修改入库单</DialogTitle>
+            <DialogDescription>
+              修改入库单信息
+            </DialogDescription>
+          </DialogHeader>
+          {editingRecord && (
+            <div className="space-y-4 py-4">
+              <div className="glass rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">入库单号:</span>
+                  <span>{editingRecord.orderNo}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">产品:</span>
+                  <span>{editingRecord.productName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">尺码:</span>
+                  <span>{editingRecord.size}</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">入库数量</label>
+                  <Input 
+                    type="number"
+                    value={editingRecord.quantity}
+                    onChange={(e) => setEditingRecord({...editingRecord, quantity: Number(e.target.value)})}
+                    placeholder="0"
+                    className="bg-white/5"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">供应商</label>
+                  <Input 
+                    value={editingRecord.supplier}
+                    onChange={(e) => setEditingRecord({...editingRecord, supplier: e.target.value})}
+                    placeholder="供应商名称"
+                    className="bg-white/5"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">
+                    <Calendar size={14} className="inline mr-1" />
+                    入库日期
+                  </label>
+                  <Input 
+                    type="date"
+                    value={editingRecord.inboundDate || ''}
+                    onChange={(e) => setEditingRecord({...editingRecord, inboundDate: e.target.value})}
+                    className="bg-white/5"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">
+                    <Clock size={14} className="inline mr-1" />
+                    入库时间
+                  </label>
+                  <Input 
+                    type="time"
+                    value={editingRecord.inboundTime || ''}
+                    onChange={(e) => setEditingRecord({...editingRecord, inboundTime: e.target.value})}
+                    className="bg-white/5"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">操作员</label>
+                  <Input 
+                    value={editingRecord.operator}
+                    onChange={(e) => setEditingRecord({...editingRecord, operator: e.target.value})}
+                    placeholder="操作员姓名"
+                    className="bg-white/5"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">备注</label>
+                  <Input 
+                    value={editingRecord.remark || ''}
+                    onChange={(e) => setEditingRecord({...editingRecord, remark: e.target.value})}
+                    placeholder="备注信息"
+                    className="bg-white/5"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsEditing(false); setEditingRecord(null); }}>
+              取消
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={!editingRecord || editingRecord.quantity <= 0}>
+              <Save size={16} className="mr-2" />
+              保存修改
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+        <DialogContent className="bg-card border-white/10 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-400">确认删除</DialogTitle>
+            <DialogDescription>
+              确定要删除这条入库记录吗？此操作不可恢复，删除后库存将相应扣减。
+            </DialogDescription>
+          </DialogHeader>
+          {deletingRecord && (
+            <div className="glass rounded-lg p-4 space-y-2 my-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">入库单号:</span>
+                <span>{deletingRecord.orderNo}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">产品:</span>
+                <span>{deletingRecord.productName}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">数量:</span>
+                <span className="text-emerald-400">+{deletingRecord.quantity}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsDeleting(false); setDeletingRecord(null); }}>
+              取消
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              <Trash2 size={16} className="mr-2" />
+              确认删除
             </Button>
           </DialogFooter>
         </DialogContent>
