@@ -80,7 +80,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
               宠物服饰<br />进销存管理系统
             </h1>
             <p className="text-white/70 text-lg max-w-md">
-              智能化的库存管理解决方案，支持Coupang跨境电商，韩币人民币双币种管理。
+              智能化的库存管理解决方案
             </p>
           </div>
         </div>
