@@ -3,10 +3,16 @@ import type { Product, ProductSKU, DualPrice } from '@/types';
 // 汇率设置 (1 CNY = 190 KRW)
 export const EXCHANGE_RATE = 190;
 
-// 辅助函数：创建双币种价格
-export const createDualPrice = (cny: number): DualPrice => ({
+// 辅助函数：从人民币创建采购价（CNY → KRW）
+export const createPurchasePrice = (cny: number): DualPrice => ({
   cny,
   krw: Math.round(cny * EXCHANGE_RATE)
+});
+
+// 辅助函数：从韩币创建售价（KRW → CNY）
+export const createSalePrice = (krw: number): DualPrice => ({
+  cny: Math.round(krw / EXCHANGE_RATE),
+  krw
 });
 
 // 狗狗冲锋衣 - 5个尺码 (Coupang SKU ID对应)
@@ -17,8 +23,8 @@ export const product1SKUs: ProductSKU[] = [
     productName: '狗狗冲锋衣',
     skuCode: '94647662186',  // L码
     size: 'L',
-    purchasePrice: createDualPrice(45),
-    salePrice: createDualPrice(118)
+    purchasePrice: createPurchasePrice(45),
+    salePrice: createSalePrice(22420)  // 韩币售价
   },
   {
     id: 'sku-002',
@@ -26,8 +32,8 @@ export const product1SKUs: ProductSKU[] = [
     productName: '狗狗冲锋衣',
     skuCode: '94647662188',  // S码
     size: 'S',
-    purchasePrice: createDualPrice(45),
-    salePrice: createDualPrice(118)
+    purchasePrice: createPurchasePrice(45),
+    salePrice: createSalePrice(22420)  // 韩币售价
   },
   {
     id: 'sku-003',
@@ -35,8 +41,8 @@ export const product1SKUs: ProductSKU[] = [
     productName: '狗狗冲锋衣',
     skuCode: '94647662190',  // M码
     size: 'M',
-    purchasePrice: createDualPrice(45),
-    salePrice: createDualPrice(118)
+    purchasePrice: createPurchasePrice(45),
+    salePrice: createSalePrice(22420)  // 韩币售价
   },
   {
     id: 'sku-004',
@@ -44,8 +50,8 @@ export const product1SKUs: ProductSKU[] = [
     productName: '狗狗冲锋衣',
     skuCode: '94647662187',  // XL码
     size: 'XL',
-    purchasePrice: createDualPrice(48),
-    salePrice: createDualPrice(128)
+    purchasePrice: createPurchasePrice(48),
+    salePrice: createSalePrice(24320)  // 韩币售价
   },
   {
     id: 'sku-005',
@@ -53,8 +59,8 @@ export const product1SKUs: ProductSKU[] = [
     productName: '狗狗冲锋衣',
     skuCode: '94647662189',  // XXL码
     size: 'XXL',
-    purchasePrice: createDualPrice(52),
-    salePrice: createDualPrice(138)
+    purchasePrice: createPurchasePrice(52),
+    salePrice: createSalePrice(26220)  // 韩币售价
   }
 ];
 
@@ -66,8 +72,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772480',  // XL码
     size: 'XL',
-    purchasePrice: createDualPrice(42),
-    salePrice: createDualPrice(108)
+    purchasePrice: createPurchasePrice(42),
+    salePrice: createSalePrice(20520)  // 韩币售价
   },
   {
     id: 'sku-007',
@@ -75,8 +81,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772481',  // XXL码
     size: 'XXL',
-    purchasePrice: createDualPrice(45),
-    salePrice: createDualPrice(118)
+    purchasePrice: createPurchasePrice(45),
+    salePrice: createSalePrice(22420)  // 韩币售价
   },
   {
     id: 'sku-008',
@@ -84,8 +90,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772488',  // 3XL码
     size: '3XL',
-    purchasePrice: createDualPrice(48),
-    salePrice: createDualPrice(128)
+    purchasePrice: createPurchasePrice(48),
+    salePrice: createSalePrice(24320)  // 韩币售价
   },
   {
     id: 'sku-009',
@@ -93,8 +99,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772482',  // 4XL码
     size: '4XL',
-    purchasePrice: createDualPrice(52),
-    salePrice: createDualPrice(138)
+    purchasePrice: createPurchasePrice(52),
+    salePrice: createSalePrice(26220)  // 韩币售价
   },
   {
     id: 'sku-010',
@@ -102,8 +108,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772483',  // 5XL码
     size: '5XL',
-    purchasePrice: createDualPrice(55),
-    salePrice: createDualPrice(148)
+    purchasePrice: createPurchasePrice(55),
+    salePrice: createSalePrice(28120)  // 韩币售价
   },
   {
     id: 'sku-011',
@@ -111,8 +117,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772485',  // 6XL码
     size: '6XL',
-    purchasePrice: createDualPrice(58),
-    salePrice: createDualPrice(158)
+    purchasePrice: createPurchasePrice(58),
+    salePrice: createSalePrice(30020)  // 韩币售价
   },
   {
     id: 'sku-012',
@@ -120,8 +126,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772484',  // 7XL码
     size: '7XL',
-    purchasePrice: createDualPrice(62),
-    salePrice: createDualPrice(168)
+    purchasePrice: createPurchasePrice(62),
+    salePrice: createSalePrice(31920)  // 韩币售价
   },
   {
     id: 'sku-013',
@@ -129,8 +135,8 @@ export const product2SKUs: ProductSKU[] = [
     productName: '大狗居家服',
     skuCode: '94529772486',  // 8XL码
     size: '8XL',
-    purchasePrice: createDualPrice(65),
-    salePrice: createDualPrice(178)
+    purchasePrice: createPurchasePrice(65),
+    salePrice: createSalePrice(33820)  // 韩币售价
   }
 ];
 
