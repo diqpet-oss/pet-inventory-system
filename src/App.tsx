@@ -7,6 +7,7 @@ import { Outbound } from '@/sections/Outbound';
 import { Purchase } from '@/sections/Purchase';
 import { Reports } from '@/sections/Reports';
 import { ProductManager } from '@/sections/ProductManager';
+import { useInventoryStore } from '@/store/inventoryStore';
 import { cn } from '@/lib/utils';
 import { PawPrint, Loader2 } from 'lucide-react';
 
@@ -80,7 +81,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
               宠物服饰<br />进销存管理系统
             </h1>
             <p className="text-white/70 text-lg max-w-md">
-              智能化的库存管理解决方案
+              智能化的库存管理解决方案，支持Coupang跨境电商，韩币人民币双币种管理。
             </p>
           </div>
         </div>
@@ -168,7 +169,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
 
             <div className="mt-8 pt-6 border-t border-white/10 text-center">
               <p className="text-sm text-muted-foreground">
-               
+                账号: diqpet@gmail.com / 密码: 88819116
               </p>
             </div>
           </div>
@@ -183,19 +184,30 @@ function MainApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoadingXLSX, setIsLoadingXLSX] = useState(true);
+  const [isLoadingCloud, setIsLoadingCloud] = useState(true);
+  const { loadFromCloud } = useInventoryStore();
 
   useEffect(() => {
     // 加载XLSX库
     loadXLSX()
       .then(() => {
         setIsLoadingXLSX(false);
-        setIsLoaded(true);
       })
       .catch(() => {
         setIsLoadingXLSX(false);
+      });
+    
+    // 从云端加载数据
+    loadFromCloud()
+      .then(() => {
+        setIsLoadingCloud(false);
+        setIsLoaded(true);
+      })
+      .catch(() => {
+        setIsLoadingCloud(false);
         setIsLoaded(true);
       });
-  }, []);
+  }, [loadFromCloud]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -218,12 +230,14 @@ function MainApp() {
     }
   };
 
-  if (isLoadingXLSX) {
+  if (isLoadingXLSX || isLoadingCloud) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 size={40} className="animate-spin text-emerald-400" />
-          <p className="text-muted-foreground">正在加载系统...</p>
+          <p className="text-muted-foreground">
+            {isLoadingXLSX ? '正在加载系统...' : '正在同步云端数据...'}
+          </p>
         </div>
       </div>
     );
