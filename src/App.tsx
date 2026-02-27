@@ -168,7 +168,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
 
             <div className="mt-8 pt-6 border-t border-white/10 text-center">
               <p className="text-sm text-muted-foreground">
-                账号: diqpet@gmail.com / 密码: 88819116
+               
               </p>
             </div>
           </div>
